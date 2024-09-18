@@ -1,0 +1,73 @@
+name: Terraform Infrastructure
+
+on:
+  workflow_dispatch: # Allows manual triggering of the workflow
+
+jobs:
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Initialize Terraform
+        working-directory: ./infra
+        run: terraform init
+
+      - name: Validate Terraform
+        working-directory: ./infra
+        run: terraform validate
+
+      - name: Plan Terraform
+        id: plan
+        working-directory: ./infra
+        run: terraform plan -var-file="terraform.tfvars" -out=tfplan
+
+      - name: Upload Terraform plan
+        uses: actions/upload-artifact@v3
+        with:
+          name: tfplan
+          path: ./infra/tfplan
+
+  terraform-apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    needs: terraform-plan
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Download Terraform plan
+        uses: actions/download-artifact@v3
+        with:
+          name: tfplan
+          path: ./infra
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Initialize Terraform
+        working-directory: ./infra
+        run: terraform init
+
+      - name: Apply Terraform
+        working-directory: ./infra
+        run: terraform apply tfplan

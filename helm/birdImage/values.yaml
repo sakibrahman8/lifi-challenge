@@ -1,0 +1,27 @@
+replicaCount: 2
+
+image:
+  repository: 098786237310.dkr.ecr.eu-west-2.amazonaws.com/bird-image
+  tag: latest
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: ecr-registry
+
+service:
+  type: LoadBalancer
+  port: 4200
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  cpuUtilizationPercentage: 50

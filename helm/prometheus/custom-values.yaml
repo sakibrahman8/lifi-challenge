@@ -1,0 +1,13 @@
+prometheus:
+  prometheusSpec:
+    scrapeInterval: "30s"
+    additionalScrapeConfigs:
+      - job_name: 'bird-api'
+        static_configs:
+          - targets: ['bird-service:4201']
+alertmanager:
+  alertmanagerSpec:
+    additionalAlertRelabelConfigs:
+      - source_labels: [alertname]
+        regex: "Watchdog"
+        action: drop
